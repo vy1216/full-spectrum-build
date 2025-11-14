@@ -3,37 +3,45 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
-console.log("Ask AI Edge Function loaded");
+// Initialize the Google Generative AI client
+import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai";
 
-// --- IMPORTANT: AI Model Integration Placeholder ---
-// You will need to replace this with a call to your actual AI model provider.
-// 1. Add your AI provider's library to supabase/functions/_shared/import_map.json
-// 2. Import the library here.
-// 3. Add your secret API key using `supabase secrets set AI_API_KEY "your_key"`
-// 4. Access the key here using Deno.env.get("AI_API_KEY")
+const MODEL_NAME = "gemini-pro";
+
 async function getAiResponse(prompt: string): Promise<string> {
-  // const apiKey = Deno.env.get("AI_API_KEY");
-  //
-  // Example with OpenAI (make sure to add "openai": "npm:openai@^4.0.0" to your import_map.json):
-  /*
-  import { OpenAI } from "openai";
-  const openai = new OpenAI({ apiKey });
+  const apiKey = Deno.env.get("GEMINI_API_KEY");
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set in environment variables.");
+  }
 
-  const response = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-          { role: "system", content: "You are a helpful AI tutor." },
-          { role: "user", content: prompt },
-      ],
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
+
+  const generationConfig = {
+    temperature: 0.9,
+    topK: 1,
+    topP: 1,
+    maxOutputTokens: 2048,
+  };
+
+  const chat = model.startChat({
+    generationConfig,
+    history: [
+        {
+          role: "user",
+          parts: [{ text: "You are an expert AI tutor. Your goal is to help users learn by providing clear, concise explanations and helpful examples. When a user asks a question, provide a step-by-step explanation that is easy to follow. Use markdown for code snippets and formatting to make the answer readable." }],
+        },
+        {
+          role: "model",
+          parts: [{ text: "Understood. I am an expert AI tutor ready to help you learn. Ask me anything!" }],
+        },
+    ],
   });
-  return response.choices[0].message.content;
-  */
-  
-  // For now, we return a simulated response after a short delay.
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  return `This is a simulated response from your new backend to: "${prompt}"`;
-}
 
+  const result = await chat.sendMessage(prompt);
+  const response = result.response;
+  return response.text();
+}
 
 serve(async (req) => {
   // This is needed to invoke the function from a browser.
@@ -44,7 +52,7 @@ serve(async (req) => {
   try {
     const { prompt } = await req.json();
 
-    // Call our placeholder AI function
+    // Call our AI function
     const aiResponse = await getAiResponse(prompt);
 
     return new Response(JSON.stringify({ answer: aiResponse }), {
