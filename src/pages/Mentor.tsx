@@ -1,102 +1,184 @@
-import { useState, useRef, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Brain, User, Loader2 } from "lucide-react";
 
+import { Link, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Bell, Bot, LayoutDashboard, LogOut, Search, Settings, Trophy, Users, ArrowRight, HelpCircle, Users2, Plus, Send } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ChangeEvent, useState, FormEvent } from "react";
+
+// Import the Supabase clients
+import { supabase } from "@/integrations/supabase/client";
+import { uploadFile } from "@/integrations/supabase/storage";
+
+// Define the shape of a message for the chat
 interface Message {
   text: string;
-  isUser: boolean;
+  sender: 'user' | 'ai';
 }
 
 const Mentor = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const navigate = useNavigate();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // State for uploaded materials
+  const [materials, setMaterials] = useState([
+    { name: "Data Structures.pdf", pages: 80 },
+    { name: "Algorithm Notes", pages: 45 },
+    { name: "Python Basics", pages: 32 },
+  ]);
+
+  // State for chat
+  const [messages, setMessages] = useState<Message[]>([
+      { sender: 'ai', text: "Hello! I'm your AI Mentor. I am now connected to a real backend. Let's get started!" }
+  ]);
+  const [userInput, setUserInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSignOut = () => {
+    navigate("/auth");
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  // --- FILE UPLOAD HANDLER ---
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      alert(`Uploading ${file.name}...`);
+      try {
+        await uploadFile(file);
+        setMaterials(prevMaterials => [...prevMaterials, { name: file.name, pages: 0 }]); // Note: page count is not available from the backend
+        alert("File uploaded successfully!");
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        alert("Failed to upload file.");
+      }
+    }
+  };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
+  // --- CHAT SUBMISSION HANDLER ---
+  const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!userInput.trim() || isLoading) return;
 
-    const userMessage: Message = { text: input, isUser: true };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
+    const userMessage: Message = { text: userInput, sender: 'user' };
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+    const currentInput = userInput;
+    setUserInput("");
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        text: `This is a simulated response to: "${input}". The real AI Tutor is coming soon!`,
-        isUser: false,
-      };
-      setMessages((prev) => [...prev, aiResponse]);
+    try {
+      // --- REAL BACKEND API CALL ---
+      // This now calls your Supabase Edge Function.
+      const { data, error } = await supabase.functions.invoke('ask-ai', {
+        body: { prompt: currentInput },
+      });
+
+      if (error) throw error;
+
+      const aiMessage: Message = { text: data.answer, sender: 'ai' };
+      setMessages(prevMessages => [...prevMessages, aiMessage]);
+
+    } catch (error) {
+      console.error("Error calling AI function:", error);
+      const errorMessage: Message = { text: "Sorry, I couldn't get a response from the backend. Make sure the function is deployed.", sender: 'ai' };
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
+  
+  const handleSuggestedQuestion = (question: string) => {
+      setUserInput(question);
+  }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <Card className="w-full max-w-2xl h-[80vh] flex flex-col">
-        <CardHeader className="text-center">
-          <Brain className="w-12 h-12 text-primary mx-auto mb-2" />
-          <CardTitle>AI Mentor</CardTitle>
-          <CardDescription>Your personal AI-powered learning companion.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow overflow-auto p-4">
+    <div className="min-h-screen bg-[#0b0b0f] text-gray-200 flex">
+      {/* Sidebar */}
+      <aside className="w-80 bg-[#121216] p-6 flex flex-col gap-8 sticky top-0 h-screen overflow-y-auto no-scrollbar">
+        <div>
+          <nav className="flex flex-col space-y-4 mb-8">
+            <Link to="/dashboard" className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-700/50"><LayoutDashboard className="w-5 h-5" /><span>Dashboard</span></Link>
+            <Link to="/mentor" className="flex items-center gap-3 p-2 rounded-md bg-gray-700/50 text-white"><Bot className="w-5 h-5" /><span>AI Tutor</span></Link>
+            <Link to="/community" className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-700/50"><Users className="w-5 h-5" /><span>Community</span></Link>
+            <Link to="/leaderboard" className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-700/50"><Trophy className="w-5 h-5" /><span>Leaderboard</span></Link>
+          </nav>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold mb-4">Your Materials</h2>
           <div className="space-y-4">
-            {messages.map((msg, index) => (
-              <div key={index} className={`flex items-start gap-3 ${msg.isUser ? "justify-end" : ""}`}>
-                {!msg.isUser && (
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback><Brain size={20}/></AvatarFallback>
-                  </Avatar>
-                )}
-                <div className={`rounded-lg px-4 py-2 max-w-[75%] ${ msg.isUser ? "bg-primary text-primary-foreground" : "bg-muted" }`}>
-                  <p className="text-sm">{msg.text}</p>
+              <label htmlFor="file-upload" className="w-full cursor-pointer">
+                <div className="w-full flex justify-center items-center gap-2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"><Plus className="w-4 h-4"/> Add New</div>
+              </label>
+              <input type="file" onChange={handleFileChange} className="hidden" id="file-upload" />
+              {materials.map((material, index) => (
+                <div key={index} className="p-3 rounded-md bg-gray-700/50 flex items-start gap-3">
+                    <svg className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <div><p className="font-semibold text-sm">{material.name}</p><p className="text-xs text-gray-400">{material.pages || '...'} pages</p></div>
                 </div>
-                {msg.isUser && (
-                  <Avatar className="w-8 h-8">
-                     <AvatarFallback><User size={20}/></AvatarFallback>
-                  </Avatar>
-                )}
-              </div>
+              ))}
+          </div>
+        </div>
+
+        <div>
+             <h2 className="text-lg font-semibold mb-4">Suggested Questions</h2>
+             <div className="space-y-3">
+                 <div onClick={() => handleSuggestedQuestion('Explain recursion')} className="text-sm p-3 rounded-md bg-gray-700/50 cursor-pointer hover:bg-gray-700">Explain recursion</div>
+                 <div onClick={() => handleSuggestedQuestion('What is Big O notation?')} className="text-sm p-3 rounded-md bg-gray-700/50 cursor-pointer hover:bg-gray-700">What is Big O notation?</div>
+                 <div onClick={() => handleSuggestedQuestion('Compare BFS vs DFS')} className="text-sm p-3 rounded-md bg-gray-700/50 cursor-pointer hover:bg-gray-700">Compare BFS vs DFS</div>
+             </div>
+        </div>
+
+        <div className="mt-auto">
+            <nav className="flex flex-col space-y-4">
+                <Link to="/profile" className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-700/50"><Users2 className="w-5 h-5" /><span>Profile</span></Link>
+                <Link to="/settings" className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-700/50"><Settings className="w-5 h-5" /><span>Settings</span></Link>
+                <Link to="#" className="flex items-center gap-3 p-2 rounded-md hover:bg-gray-700/50"><HelpCircle className="w-5 h-5" /><span>Help</span></Link>
+            </nav>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 p-8 flex flex-col h-screen overflow-hidden">
+        <header className="flex items-center justify-between mb-4 flex-shrink-0">
+          <div className="relative w-full max-w-xs"><Input type="search" placeholder="Quick search..." className="bg-[#121216] border-gray-700 rounded-full pl-10" /><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" /></div>
+          <div className="flex items-center gap-4"><Button variant="outline" className="rounded-full border-gray-700 bg-[#121216] hover:bg-gray-800"><Bell className="w-5 h-5" /></Button><Button onClick={handleSignOut} className="bg-blue-600 hover:bg-blue-700 rounded-full flex items-center gap-2"><span>Logout</span><LogOut className="w-4 h-4" /></Button><Link to="/profile"><div className="p-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full"><Avatar><AvatarImage src="/avatars/user.png" alt="User" /><AvatarFallback>U</AvatarFallback></Avatar></div></Link></div>
+        </header>
+
+        {/* Chat Area */}
+        <div className="flex-1 overflow-y-auto pr-4 space-y-6">
+            {messages.map((message, index) => (
+                <div key={index} className={`flex items-start gap-4 ${message.sender === 'user' ? 'justify-end' : ''}`}>
+                    {message.sender === 'ai' && <div className="p-2 bg-blue-600 rounded-full text-white flex-shrink-0"><Bot className="w-6 h-6"/></div>}
+                    <div className={`p-4 rounded-lg max-w-lg ${message.sender === 'user' ? 'bg-blue-600 text-white' : 'bg-[#121216]'}`}>
+                        <p>{message.text}</p>
+                    </div>
+                </div>
             ))}
             {isLoading && (
-                 <div className="flex items-start gap-3">
-                    <Avatar className="w-8 h-8">
-                        <AvatarFallback><Brain size={20}/></AvatarFallback>
-                    </Avatar>
-                    <div className="rounded-lg px-4 py-2 bg-muted flex items-center">
-                        <Loader2 className="w-5 h-5 animate-spin"/>
+                <div className="flex items-start gap-4">
+                    <div className="p-2 bg-blue-600 rounded-full text-white flex-shrink-0"><Bot className="w-6 h-6"/></div>
+                    <div className="p-4 rounded-lg bg-[#121216] max-w-lg">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-75"></div>
+                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse delay-150"></div>
+                        </div>
                     </div>
                 </div>
             )}
-            <div ref={messagesEndRef} />
-          </div>
-        </CardContent>
-        <form onSubmit={handleSendMessage} className="p-4 border-t flex items-center gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask your AI Mentor anything..."
-            className="flex-grow"
-            disabled={isLoading}
-          />
-          <Button type="submit" size="icon" disabled={isLoading}>
-            <Send className="w-4 h-4" />
-          </Button>
-        </form>
-      </Card>
+        </div>
+
+        {/* Chat Input */}
+        <div className="mt-auto pt-6 flex-shrink-0">
+            <form onSubmit={handleSendMessage}>
+                <div className="relative">
+                  <Input placeholder="Ask anything about your materials..." value={userInput} onChange={e => setUserInput(e.target.value)} className="pr-16 h-12 bg-[#121216] border-gray-700 text-white rounded-full"/>
+                  <Button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-blue-600 hover:bg-blue-700 rounded-full" size="icon" disabled={isLoading}><Send className="w-4 h-4"/></Button>
+                </div>
+                <p className="text-xs text-center text-gray-500 mt-2">AI trained on your uploaded materials • Context-aware responses</p>
+            </form>
+        </div>
+      </main>
     </div>
   );
 };
