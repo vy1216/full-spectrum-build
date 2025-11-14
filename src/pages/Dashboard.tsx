@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,42 +145,48 @@ const Dashboard = () => {
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-3 gap-6">
-          <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary">
+          <Card className="hover:shadow-lg transition-all border-2 hover:border-primary">
             <CardHeader>
               <Brain className="w-12 h-12 text-primary mb-2" />
               <CardTitle>AI Mentor</CardTitle>
               <CardDescription>Chat with your personal AI tutor</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button className="w-full bg-gradient-to-r from-primary to-accent">
-                Start Learning
-              </Button>
+              <Link to="/mentor" className="w-full">
+                <Button className="w-full bg-gradient-to-r from-primary to-accent">
+                  Start Learning
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-accent">
+          <Card className="hover:shadow-lg transition-all border-2 hover:border-accent">
             <CardHeader>
               <BookOpen className="w-12 h-12 text-accent mb-2" />
               <CardTitle>My Materials</CardTitle>
               <CardDescription>View and upload study materials</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">
-                Browse Materials
-              </Button>
+              <Link to="/materials" className="w-full">
+                <Button variant="outline" className="w-full">
+                  Browse Materials
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-all cursor-pointer border-2 hover:border-success">
+          <Card className="hover:shadow-lg transition-all border-2 hover:border-success">
             <CardHeader>
               <Users className="w-12 h-12 text-success mb-2" />
               <CardTitle>Study Circles</CardTitle>
               <CardDescription>Join collaborative learning rooms</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full">
-                Explore Circles
-              </Button>
+              <Link to="/circles" className="w-full">
+                <Button variant="outline" className="w-full">
+                  Explore Circles
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>
