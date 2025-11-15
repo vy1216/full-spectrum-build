@@ -83,6 +83,10 @@ const Community = () => {
             <h1 className="text-lg font-bold">COMMUNITY</h1>
           </div>
           <nav className="flex flex-col space-y-4">
+            <Link to="/chat" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
+              <Bot className="w-5 h-5" />
+              <span>Chat</span>
+            </Link>
             <Link to="/dashboard" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
               <LayoutDashboard className="w-5 h-5" />
               <span>Dashboard</span>

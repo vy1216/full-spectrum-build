@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Bell, Bot, HelpCircle, LayoutDashboard, LogOut, Search, Settings, Trophy, Users, Moon, Sun } from "lucide-react";
+import { Bell, Bot, HelpCircle, LayoutDashboard, LogOut, Search, Settings, Trophy, Users, Moon, Sun, Users2 } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
 
 const SettingsPage = () => {
@@ -25,6 +25,10 @@ const SettingsPage = () => {
             <h1 className="text-lg font-bold">SETTINGS</h1>
           </div>
           <nav className="flex flex-col space-y-4">
+            <Link to="/chat" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
+              <Bot className="w-5 h-5" />
+              <span>Chat</span>
+            </Link>
             <Link to="/dashboard" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
               <LayoutDashboard className="w-5 h-5" />
               <span>Dashboard</span>
@@ -45,6 +49,10 @@ const SettingsPage = () => {
         </div>
         <div>
           <nav className="flex flex-col space-y-4">
+            <Link to="/profile" className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
+                <Users2 className="w-5 h-5" />
+                <span>Profile</span>
+            </Link>
             <Link to="/settings" className="flex items-center gap-3 p-2 rounded-md bg-muted text-foreground">
               <Settings className="w-5 h-5" />
               <span>Settings</span>

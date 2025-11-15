@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -16,6 +17,7 @@ import Leaderboard from "./pages/Leaderboard";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import Chat from "./pages/Chat"; // Import the new Chat page
 
 const queryClient = new QueryClient();
 
@@ -27,10 +29,11 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<Chat />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/mentor" element={<Mentor />} />
+            <Route path="/chat" element={<Chat />} />
             <Route path="/materials" element={<Materials />} />
             <Route path="/community" element={<Community />} />
             <Route path="/quiz" element={<Quiz />} />
